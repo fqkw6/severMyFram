@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net;
-using System.Threading;
-using Net;
-using System.IO;
+﻿using cs;
 using ProtoBuf;
-using cs;
-using login;
+using System;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
 namespace ConsoleApplication1
 {
     class Program
@@ -57,26 +50,15 @@ namespace ConsoleApplication1
             }
         }
 
-        /// <summary>
-        /// 数据转换，网络发送需要两部分数据，一是数据长度，二是主体数据
-        /// </summary>
-        /// <param name="message"></param>
-        /// <returns></returns>
-        private static byte[] WriteMessage(byte[] message)
-        {
-            MemoryStream ms = null;
-            using (ms = new MemoryStream())
-            {
-                ms.Position = 0;
-                BinaryWriter writer = new BinaryWriter(ms);
-                ushort msglen = (ushort)message.Length;
-                writer.Write(msglen);
-                writer.Write(message);
-                writer.Flush();
-                return ms.ToArray();
-            }
-        }
 
+        private static byte[] CreateData(int typeId, IExtensible pbuf)
+        {
+            byte[] pbdata = PackCodec.Serialize(pbuf);
+            ByteBuffer buff = new ByteBuffer();
+            buff.WriteInt(pbdata.Length);
+            buff.WriteBytes(pbdata);
+            return buff.ToBytes();
+        }
         /// <summary>
         /// 接收指定客户端Socket的消息
         /// </summary>
@@ -103,11 +85,25 @@ namespace ConsoleApplication1
                     Console.WriteLine(pbdata.Length+"dddd");
                     // Console.WriteLine(typeId+"typeid");
                     //通过协议号判断选择的解析类
-                    req_login clientReq = PackCodec.Deserialize<req_login>(pbdata.Skip(2).Take(datalength - 2).ToArray());
+                  
+                    CSMessage clientReq = PackCodec.Deserialize<CSMessage>(pbdata);
                     //ushort typeId = buff.ReadShort();
-                    //Console.WriteLine(typeId + "typeId");
-                    int user_name = clientReq.flag;
-                    Console.WriteLine("数据内容：UserName={0}", user_name);
+                    Console.WriteLine(clientReq.TypeId + "typeId");
+                    CSLoginReq cSLoginReq= PackCodec.Deserialize<CSLoginReq>(clientReq.Data);
+                    Console.WriteLine("数据内容：UserName={0},PassWard={1}", cSLoginReq.UserName,cSLoginReq.Password);
+
+                    CSMessage cSMessage = new CSMessage();
+                    cSMessage.TypeId = 10001;
+
+                    CSLoginReq mLoginInfo = new CSLoginReq();
+                    mLoginInfo.UserName = "linshuhe";
+                    mLoginInfo.Password = "123456";
+                    cSMessage.Data = PackCodec.Serialize<CSLoginReq>(mLoginInfo);
+                    byte[] data = CreateData((int)EnmCmdID.CS_LOGIN_REQ, cSMessage);
+                    mClientSocket.Send(data);
+                    Console.WriteLine(data.Length + "changdu");
+
+
                 }
                 catch (Exception ex)
                 {

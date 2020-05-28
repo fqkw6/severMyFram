@@ -74,9 +74,6 @@ namespace ConsoleApplication1
                     int receiveNumber = mClientSocket.Receive(result);
                     Console.WriteLine("接收客户端{0}消息， 长度为{1}", mClientSocket.RemoteEndPoint.ToString(), receiveNumber);
                     ByteBuffer buff = new ByteBuffer(result);
-                    //int datalength = buff.ReadShort();
-                    //int typeId = buff.ReadInt();
-                    //  ushort typeId = buff.ReadShort();
                     int datalength = buff.ReadInt();
                     Console.WriteLine(datalength);
                    
@@ -98,11 +95,13 @@ namespace ConsoleApplication1
                     CSLoginReq mLoginInfo = new CSLoginReq();
                     mLoginInfo.UserName = "linshuhe";
                     mLoginInfo.Password = "123456";
+                    System.Collections.Generic.List<uint> ulist = mLoginInfo.IDList;
+                    ulist.Add(12323);
+                    ulist.Add(1232334552);
                     cSMessage.Data = PackCodec.Serialize<CSLoginReq>(mLoginInfo);
                     byte[] data = CreateData((int)EnmCmdID.CS_LOGIN_REQ, cSMessage);
                     mClientSocket.Send(data);
                     Console.WriteLine(data.Length + "changdu");
-
 
                 }
                 catch (Exception ex)
